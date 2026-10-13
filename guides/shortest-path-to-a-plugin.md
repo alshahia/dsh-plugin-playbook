@@ -39,8 +39,9 @@ the harness would have rendered for free.
 8. Live install: a profile **junction + bare-name row** — never `install_bundle` with a
    `file:` spec for development (it installs an injected snapshot copy; trap 9), and never
    copy files through the junction. On a `patchReload: live` profile this applies entirely on
-   save (module, tools, and the client bundle in an open page); a source change to an
-   already-applied module needs a re-apply (GUI disable → enable) or a restart.
+   save (module, tools, and the client bundle in an open page). A **source change to an
+   already-applied module needs the next harness start**: a GUI re-apply (disable → enable)
+   re-runs `apply()` on the **cached** module and does **not** re-import it (trap 10).
 9. Client half (optional): `dsh.client` block, `./client` export, one fail-safe slot registration.
 10. Structural tests → **user visual checkpoint** → commit → push.
 
@@ -76,6 +77,28 @@ the harness would have rendered for free.
    successful-looking install can freeze your code. Develop through a **profile
    junction + bare-name row** (step 8); reserve `install_bundle` for a frozen release.
    Record: `incidents/2026-10-13-install-injection-snapshot.md`.
+10. **An optional service is not readable as a bare property, and a re-apply is not a
+    re-import.** A service not declared in `inject` **throws** on property access —
+    `Error: cannot get property "webServer" without inject` — it does not return
+    `undefined`. Read it with `ctx.get(name)` (plus an undefined check) or consume it
+    through `ctx.inject([...], …)`; a `catch { return undefined }` around the property read
+    converts a host rule violation into a silent capability absence. In the plugin that
+    proved this the swallow cost three features at once: the panel registered **no routes**
+    (every request 404 while Config, its tools and its client occupant all looked healthy),
+    the per-project inbox silently fell back to the launch directory (`agents`), and uploads
+    were never found (`attachments`). A registered client occupant does **not** prove the
+    routes exist: `/dsh-vision-bridge/inbox` → 404 while `/` → 401 (the auth-gated SPA
+    fallback) means no named route matched. The same incident measured the delivery rule in
+    step 8 (a re-apply re-runs `apply()`, it does not re-import) and that a `file:///` row
+    only carries a **self-contained** module — mounting the package by path made the entry
+    disappear from the live composition while the import-free `.mjs` probe worked, so a
+    package with bare imports is mounted by **package name** through the junction. The
+    harness's own tests guard the read rule as **"postmortem 0001"**
+    (`packages/fs/tool-fs-search/tests/load-path.spec.ts:1-15`; also
+    `packages/mcp/mcp-client/tests/load-path.spec.ts`,
+    `packages/subagent/tool-subagent/tests/tool-subagent.spec.ts:565`,
+    `packages/experimental/hooks-claude-code/tests/bridge.spec.ts:467`). Record:
+    `incidents/2026-10-13-optional-service-read-404-panel.md`.
 
 ## 4. Target drift — §1 of the client-card guide is the 0.1.x seam
 

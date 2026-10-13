@@ -8,14 +8,25 @@ and the plugin's docs disagree, the plugin's docs win (report the drift).
 - **Repo:** `D:\my_deepseek_harness\dsh-vision-bridge\`
 - **Target:** DSH `0.2.1-alpha.2` (`D:\deepseek-harness_2`)
 - **Status at hand-over:** committed and green — `3753bbd`
-  (`fix(gui): make the master switch hold at the upload route and in the panel`) and
-  `8885d3b` (docs: the guide, the incident index and the two records), then `71c4477`
-  (`docs(install): a junction + row is the live path; install_bundle injects a snapshot`).
+  (`fix(gui): make the master switch hold at the upload route and in the panel`), `8885d3b`
+  (docs: the guide, the incident index and the two records), `71c4477`
+  (`docs(install): a junction + row is the live path; install_bundle injects a snapshot`),
+  `8352710` (`fix(gui): read the optional webServer through ctx.inject, not a bare property`),
+  `c1c60eb` (the JSDoc states the measured cause) and `c66691c` (its I-4 docs pass). Suite
+  after `8352710`: **12 files / 295 tests PASS**, `tsc --noEmit` clean.
 - **Install: DONE** (2026-10-13) — a **junction + bare-name patch row**, live-verified on the
   `patchReload: live` `web` profile with **no restart and no page refresh**: Config
   `status:"schema"`, both tools in the Host tool list, the panel occupant at
   `conversation.composer.dock` order 55, and the GUI toggle `schema`→`inactive`→`schema`.
   Not `install_bundle` — a `file:` spec there installs an injected snapshot copy (I-3, trap 12).
+- **Live-pending (user checkpoint):** the running harness still holds the **pre-`8352710`**
+  module, so `GET /dsh-vision-bridge/inbox` answers **404** until the next harness start
+  (`/` answers 401; the routes were never registered — I-4, index row 18, trap 13). One
+  harness start confirms it; a GUI toggle cannot (a re-apply does not re-import the module).
+- **Sibling defect, not fixed:** `GET /dsh-autocompact/status` → 404 from the identical bare
+  `ctx.webServer` read in `dsh-autocompact/src/gui.ts` → `installGuiBridge`
+  (`static inject = ['llm','tokenMeter','sessions']` — no `webServer`); same fix recipe, then
+  a harness start.
 
 ## What it is
 
@@ -83,6 +94,7 @@ sub-agent mount), `index.ts` (entry), `client.js` (hand-written bundle).
 | D-4 | The host route contract is `/inbox` + `/upload` + `/remove`, not the spec's first-draft `/status` + `/list` + `/upload`. | `docs/DEVIATIONS.md` D-4 |
 | D-5 | The `enabled` switch also gates the upload route with **403** (before the body is decoded or anything is committed), and the panel renders a "The bridge is disabled." state with its controls disabled — the switch is a host check *and* a rendered state, not one or the other. | `docs/DEVIATIONS.md` D-5 |
 | D-6 | Installed as a junction + bare-name patch row, **not** with `install_bundle`; neither half needed a restart — the plan's A1.3 "one restart" was an assumption about the delivery table, not a requirement of the mechanism. `install_bundle` with a `file:` spec installs a pnpm-**injected hard-linked snapshot copy**, so a later source edit would never have reached the harness. | `docs/DEVIATIONS.md` D-6 |
+| D-7 | Optional services are consumed through `ctx.inject(['webServer'], …)` (the shipped form) with `safeGet` preferring `ctx.get(name)`; **a re-apply re-runs `apply()` but does not re-import a cached module** — a host `src/*.ts` change needs the next harness start — and a `file:///` row only carries a self-contained module (mounting this plugin by path made the entry disappear from the live composition). | `docs/DEVIATIONS.md` D-7 |
 
 ## Trap list (short; full records in the guides)
 
@@ -105,9 +117,16 @@ its source, in the best-practices guides (scope: `deepseek_plugins/docs/`):
    `standardProps`; the host resolves `agents.get(id)` → `session.header.cwd`.
    That is the difference between a per-project and a per-process panel. →
    *source-plugin + client-card guides*.
-5. **Read optional services structurally; register the panel from the BASE
-   context** — a panel mounted from a nested `ctx.inject` is absent exactly when
-   it must report what is missing. → *source-plugin guide*.
+5. **Never read an optional service as a bare property; never swallow the
+   throw** — a service not declared in `inject` **throws**
+   `cannot get property "webServer" without inject` on property access (it does
+   not return `undefined`). Use `ctx.get(name)` with an undefined check, or
+   consume it through `ctx.inject([...], …)`; a `catch { return undefined }`
+   turns a host rule violation into a silent capability absence — here that cost
+   every panel route (404 while Config, both tools and the client occupant all
+   looked healthy), the per-project inbox (`agents`) and uploads (`attachments`).
+   → *source-plugin guide §3b*, trap 13,
+   [2026-10-13-optional-service-read-404-panel](../incidents/2026-10-13-optional-service-read-404-panel.md).
 6. **Plugin routes are not behind the GUI's session gate** — a real local-only
    host gap. Mitigation used here: a same-origin check on every write route.
    Recorded as a security note with a mitigation, **not** a solved problem. →
@@ -145,9 +164,23 @@ its source, in the best-practices guides (scope: `deepseek_plugins/docs/`):
     Install a **junction + bare-name patch row** to develop; reserve `install_bundle` for
     a frozen release. On a `patchReload: live` profile the junction + row applies entirely
     on save (module, tools, and the client bundle in an open page); a source change to an
-    **already-applied** module needs a re-apply (GUI disable → enable) or a restart. →
+    **already-applied** module needs the next **harness start** — a GUI re-apply re-runs
+    `apply()` on the **cached** module and does **not** re-import it (I-4). →
     *both funnel guides + client-card guide §5 (item 5)* +
     [2026-10-13-install-injection-snapshot](../incidents/2026-10-13-install-injection-snapshot.md).
+13. **The GUI half answered 404 for every request while the plugin looked healthy**
+    — `webServer` is optional (not in `inject`), the bare property read **throws**
+    `cannot get property "webServer" without inject`, and `safeGet`'s
+    `catch { return undefined }` hid it, so `installVisionGui` registered **no
+    routes**. Diagnosis: `GET /dsh-vision-bridge/inbox` → **404** while `GET /` →
+    **401** (auth-gated SPA fallback) = no named route matched; a registered client
+    occupant does **not** prove routes exist. Fixed in `8352710` by consuming the
+    view through `ctx.inject(['webServer'], scope => …)` and making `safeGet`
+    prefer `ctx.get(name)`; four injected-path cases in `tests/gui.spec.ts` + a new
+    `tests/service.spec.ts`. Same pass: a re-apply does not re-import (trap 12) and a
+    `file:///` row only carries a self-contained module. → *source-plugin guide
+    §3b + funnel trap 10* +
+    [2026-10-13-optional-service-read-404-panel](../incidents/2026-10-13-optional-service-read-404-panel.md).
 
 ## Authoritative docs (read these, not a summary of them)
 
@@ -155,13 +188,16 @@ its source, in the best-practices guides (scope: `deepseek_plugins/docs/`):
 |---|---|
 | `dsh-vision-bridge/docs/SPEC.md` | design, the four gates, acceptance evidence classes |
 | `dsh-vision-bridge/docs/PLAN.md` | the implementation plan |
-| `dsh-vision-bridge/docs/DEVIATIONS.md` | D-1..D-6 and why the built system differs |
+| `dsh-vision-bridge/docs/DEVIATIONS.md` | D-1..D-7 and why the built system differs |
 | `dsh-vision-bridge/docs/VISION-AGENT.md` | the sub-agent, the path-as-medium trick, injection containment |
-| `dsh-vision-bridge/docs/GUI.md` | slots, the portal placement, the frozen route contract, browser checkpoint steps |
+| `dsh-vision-bridge/docs/GUI.md` | slots, the portal placement, the frozen route contract, browser checkpoint steps, the 404-vs-401 diagnostic (I-4) |
+| `dsh-vision-bridge/docs/INCIDENT-INDEX.md` | I-1..I-4 one-page catalog (I-4 = the optional-service read + the re-apply rule) |
 
-Evidence trail: `tests/` (11 files, the suite the plugin reports as **283 tests**
-green at the time of writing), `--dump-config` exit 0 with the row, `tsc --noEmit` exit 0,
-and the live install checks recorded in I-3.
+Evidence trail: `tests/` (**12 files / 295 tests** green after `8352710`; 11 files / 283 at the
+time of the earlier hand-over), `--dump-config` exit 0 with the row, `tsc --noEmit` exit 0, the
+live install checks recorded in I-3, and the I-4 probe (`/dsh-route-probe/bare` → 404,
+`/dsh-route-probe/injected` → 200, `/dsh-vision-bridge/inbox` → 404 pending the owed harness
+start).
 
 ## Shared-experience pointers
 
