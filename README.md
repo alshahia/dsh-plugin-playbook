@@ -33,21 +33,32 @@ Two rules of use:
 | Path | What it is | Source project |
 |---|---|---|
 | [`guides/shortest-path-to-a-plugin.md`](guides/shortest-path-to-a-plugin.md) | The funnel: shape → shortest order → worst traps. **Read first.** | `deepseek_plugins` |
-| [`INCIDENT-INDEX.md`](INCIDENT-INDEX.md) | One-page catalog of the 14 core records: issue, root cause, fix, status + a verification matrix and live-application semantics | `dsh-autocompact` |
+| [`INCIDENT-INDEX.md`](INCIDENT-INDEX.md) | One-page catalog of the 18 core records: issue, root cause, fix, status + a verification matrix and live-application semantics | `dsh-autocompact` |
 | [`RETRO.md`](RETRO.md) | Nine **process** failures and the rule each produced (not technical bugs — the meta-lessons) | `dsh-autocompact` |
-| [`incidents/`](incidents/) | The 14 core records the catalog tables, verbatim | `dsh-autocompact` |
+| [`incidents/`](incidents/) | The 18 core records the catalog tables, verbatim | `dsh-autocompact` |
 | [`incidents/workspace-suite/`](incidents/workspace-suite/) | 6 further records from the earlier plugin suite (junction farm, inject cache, target drift, the settings-seam retirement) | `deepseek_plugins` |
+| [`projects/`](projects/) | Per-**project** entry cards: what a plugin is, its shape, its trap list, and a pointer to its own authoritative docs. The project keeps its own notes; this folder only points. | multiple |
 
 Companion deep guides are **not** copied here (they carry project-specific wiring); they stay with
 the workspace and are pointed to:
 
 | Need | Read |
 |---|---|
-| Host-side (engine, hook, watcher, command) | `D:\my_deepseek_harness\deepseek_plugins\docs\best-practices\creating-a-source-plugin.md` |
-| Client card / Web-UI surface | `D:\my_deepseek_harness\deepseek_plugins\docs\best-practices\creating-a-client-card-plugin.md` (§7 = the 0.2.x seam) |
+| Host-side (engine, hook, watcher, command) | `D:\my_deepseek_harness\deepseek_plugins\docs\best-practices\creating-a-source-plugin.md` (§3a = `ctx.fs`, §3b = `ctx.webServer`, §3c = `defineTool`, §7 = route security) |
+| Client card / Web-UI surface | `D:\my_deepseek_harness\deepseek_plugins\docs\best-practices\creating-a-client-card-plugin.md` (§7 = the 0.2.x seam, §8 = the hand-written bundle + contract assertions) |
 | Pre-flight checklist | `D:\my_deepseek_harness\deepseek_plugins\docs\best-practices\plugin-checklist.md` |
 | The fully worked guide + 14-entry trap list | `D:\my_deepseek_harness\dsh-autocompact\docs\PLUGIN-GUIDE.md` |
 | Updating a checkout to a new release + plugin compat | `D:\my_deepseek_harness\note_issue_fix\2026-10-12-update-to-0.2.1-and-plugin-compat.md` |
+
+## Projects (per-project entry cards)
+
+The records above are **plugin-agnostic** experience. A project also gets a thin
+**entry card** here so the next agent finds it, while its authoritative notes
+stay in the project's own repo — the card points, it does not duplicate.
+
+| Project | One line | Entry card |
+|---|---|---|
+| `dsh-vision-bridge` | Text-only model + real vision: per-project image inbox, `describe_image`, a pinned vision sub-agent, upload panel | [`projects/dsh-vision-bridge.md`](projects/dsh-vision-bridge.md) |
 
 ## Symptom → record (find your problem)
 
@@ -72,6 +83,17 @@ the workspace and are pointed to:
 | A plugin "does not work" and you are not sure it is even loaded | [`auto-compact-not-working`](incidents/workspace-suite/2026-09-12-auto-compact-not-working.md) — prove what is actually loaded before theorizing |
 | Your tests are green and the UI is still broken for the user | [`RETRO.md`](RETRO.md) rule 1 — structural proof is not layout proof; state the check the user must run |
 | Two of your own records/README contradict the code | [`RETRO.md`](RETRO.md) rule 9 — run a consolidation pass; writing the index is what exposes contradictions |
+| A GUI must write, upload, or delete **image bytes** into a project folder | [`projects/dsh-vision-bridge.md`](projects/dsh-vision-bridge.md) traps 1-2, then `deepseek_plugins/docs/best-practices/creating-a-source-plugin.md` §3a — `ctx.fs` has no binary write and no delete |
+| Two writers silently drop one entry from a JSON state file | same card, trap 2 / source-plugin guide §3a — `FsWriteIntent` semantics; omitting the intent overwrites |
+| `webserver: duplicate exact route "…"` on mount; or a route handler needs JSON output | same card, trap 3 / source-plugin guide §3b — `ctx.webServer.register`, no JSON helper, register inside `ctx.effect` |
+| A per-project panel behaves per-process | same card, trap 4 / source-plugin + client-card guides — a route handler has no Agent; pass `sessionId` |
+| A panel is absent exactly when it should say a service is missing | same card, trap 5 / source-plugin guide §3b — an optional service read as a bare property **throws** (`cannot get property "…" without inject`); use `ctx.get(name)` or `ctx.inject([...])`, and never let a `catch { return undefined }` hide it (I-4) |
+| A panel/route answers 404 (while `/` answers 401) and every health check looks green | [`optional-service-read-404-panel`](incidents/2026-10-13-optional-service-read-404-panel.md) — the routes were **never registered**: a bare optional-service read threw and a `try/catch` turned it into "service absent" (I-4) |
+| An upload/write route answers without the GUI session cookie | same card, trap 6 / source-plugin guide §7 + checklist — a real local-only host gap; mitigate same-origin, do not call it solved |
+| A hand-written `client.js` never mounts, or a top-level `return` is a SyntaxError | same card, trap 7 / client-card guide §8 — IIFE, `__ModuleLoader__.load`, the `exports` map |
+| Client tests are green and the registration is still broken | same card, trap 8 / client-card guide §8 — assert the literal contract from source |
+| A `defineTool` parameter assertion fails, or `isConcurrencySafe()` is false with no args | same card, trap 9 / source-plugin guide §3c — the DSL becomes a JSON Schema |
+| A fake `ctx.inject` fires for every dependency list and explodes on a missing service | same card, trap 10 / source-plugin guide §5 — availability-gate the fake |
 
 ## Provenance
 
@@ -80,6 +102,7 @@ the workspace and are pointed to:
 | `dsh-autocompact/docs/{INCIDENT-INDEX.md, RETRO.md, incidents/*.md}` | commit `e8cf2e0` (`main`, worktree clean) | 2026-10-12 |
 | `deepseek_plugins/docs/incidents/*.md` | commit `4498abd` (`master`) | 2026-10-12 |
 | `deepseek_plugins/docs/best-practices/shortest-path-to-a-plugin.md` | commit `4498abd` (`master`) | 2026-10-12 |
+| `projects/dsh-vision-bridge.md` — a new entry card, not a copy | `D:\my_deepseek_harness\dsh-vision-bridge` (dirty tree at hand-over) | 2026-10-12 |
 
 Copies are verbatim except for a one-line **"Universal copy"** provenance header at the top of the
 index, the retro and the guide. The source repos remain authoritative: each project keeps its own
