@@ -46,8 +46,10 @@ the harness would have rendered for free.
    another volatile node or an array element.
 2. **`dsh.client.inject` takes package names; the bundle's `inject` takes ctx
    service keys** — two different lists, both required.
-3. **A client card's patch-row `name` must be the package name** — a `file://` URL
-   there silently drops the bundle.
+3. **A client card's patch-row `name` may be the package name OR a `file://` path** —
+   a path-like row carries the client half too: `locatePkgJson` walks up to the owning
+   `package.json`, so what matters is that manifest being reachable with `dsh.client` +
+   `exports['./client']` (`incidents/2026-10-13-file-url-row-client-bundle-claim.md`).
 4. **The bundle's externals are the frozen platform table** (`react`,
    `react/jsx-runtime`, `react-dom`, `react-dom/client`, a few `@deepseek-ai`
    client packages); `@deepseek-ai/*` **value** imports are forbidden. Never pin a
