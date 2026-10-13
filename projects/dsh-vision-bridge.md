@@ -99,7 +99,7 @@ sub-agent mount), `index.ts` (entry), `client.js` (hand-written bundle).
 ## Trap list (short; full records in the guides)
 
 Each trap below cost real debugging time on this plugin and is written up, with
-its source, in the best-practices guides (scope: `deepseek_plugins/docs/`):
+its source, in this playbook's own deep guides (scope: `guides/`):
 
 1. **`ctx.fs` cannot write or delete binary** — `writeText`/`editText` only; no
    `writeBytes`, `mkdir`, `remove`. A GUI that uploads images cannot write them
@@ -205,6 +205,7 @@ start).
   [`../README.md`](../README.md) and
   [`../guides/shortest-path-to-a-plugin.md`](../guides/shortest-path-to-a-plugin.md).
 - The deep guides that carry the traps above:
-  `D:\my_deepseek_harness\deepseek_plugins\docs\best-practices\creating-a-source-plugin.md`
-  and `...\creating-a-client-card-plugin.md`, with the pre-flight gates in
-  `...\plugin-checklist.md`.
+  [`../guides/creating-a-source-plugin.md`](../guides/creating-a-source-plugin.md)
+  and [`../guides/creating-a-client-card-plugin.md`](../guides/creating-a-client-card-plugin.md)
+  (read its 0.1.6 banner), with the pre-flight gates in
+  [`../guides/plugin-checklist.md`](../guides/plugin-checklist.md).

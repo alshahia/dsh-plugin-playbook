@@ -1,7 +1,9 @@
-> **Universal copy** — source: `deepseek_plugins/docs/best-practices/shortest-path-to-a-plugin.md`.
-> The companion deep guides stay with the workspace (`creating-a-client-card-plugin.md` §7,
-> `creating-a-source-plugin.md`, `plugin-checklist.md`) and `dsh-autocompact/docs/PLUGIN-GUIDE.md`
-> is the fully worked version. See this folder's README for the pointer table.
+> **Universal copy** — source: `deepseek_plugins/docs/best-practices/shortest-path-to-a-plugin.md`
+> (that repository is now frozen at `_archive/deepseek_plugins/` in the workspace).
+> The companion deep guides are in this same folder: `creating-a-source-plugin.md`,
+> `creating-a-client-card-plugin.md` (read its 0.1.6 banner), `plugin-checklist.md`,
+> `plugin-template-protocol.md`, `toolchain-and-test-traps.md`; and
+> `dsh-autocompact/docs/PLUGIN-GUIDE.md` is the fully worked version.
 # Best practices — the shortest path to a working plugin (start here)
 
 This is the funnel: read it first, then the deep guide for the shape you picked.

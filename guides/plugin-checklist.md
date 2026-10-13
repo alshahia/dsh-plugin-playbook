@@ -1,0 +1,152 @@
+> **Universal copy** — source: `deepseek_plugins/docs/best-practices/plugin-checklist.md`
+> (commit `4498abd`, `master`; that repository is now frozen at
+> `_archive/deepseek_plugins/` in the workspace). Copied 2026-10-13; internal
+> path references were rebased to this `guides/` folder on the same day.
+
+# Best practices — before you claim done (plugin checklist)
+
+Run this list for EVERY plugin task in this workspace. The per-plugin anatomy
+guides (creating-a-source-plugin.md, creating-a-client-card-plugin.md) end
+before "done" and hand off here; this list does not restate them.
+
+Source pointers: AGENTS.md §3 (commands), §5 (git), §6 (conventions), §10
+(CLAUDE.md validation rules). Do not re-derive; trust and link.
+
+## 1. Type + unit validation
+
+- [ ] `tsc --noEmit` for the touched package (package-level tsconfig; there is
+      no root package.json — see AGENTS.md §4.4).
+- [ ] Full vitest suite via the TARGET checkout's bin, from the workspace
+      root:
+      `& '<target-checkout>\node_modules\.bin\vitest.CMD' run`.
+      Report file/test counts and exit code, not a vibe (CLAUDE.md §10). The
+      current recorded baseline lives in HANDOFF.md; green ON THE TARGET is
+      the rule (universal-target directive, AGENTS.md §4.1 — kit/shared code
+      additionally goes green on the OTHER checkout before claiming done).
+- [ ] New tests are added for new behavior; existing observable assertions
+      were not weakened.
+SKIPPED format (when a check cannot run): `SKIPPED: <check> — REASON: <why>`.
+
+## 2. Wiring validation
+
+- [ ] `--dump-config` composition check after any cordis.patch.yml or package
+      wiring change (workdir = the RUN checkout):
+      `node --import tsx/esm apps/cli/src/bin.ts --profile web --patch 'D:/…/<plugin-suite>/cordis.patch.yml' --dump-config`.
+      PASS = exit 0 + the plugin rows present + base rows you displaced are
+      `disabled: true`. No boot happened.
+- [ ] Card packages additionally: `lib/client.js` rebuilt (tsdown) and the
+      delivery junction in the current user's profile\node_modules resolves
+      to the workspace package.
+
+## 3. Junction / environment hygiene
+
+- [ ] Junction farm re-pointed only via `node scripts/link-node-modules.mjs`
+      (target recorded in scripts/.dsh-target.txt); nothing in node_modules
+      was hand-edited.
+- [ ] No `pnpm/npm install` was run in this workspace.
+- [ ] The running DSH harness was never killed, restarted, or replaced; boot
+      or GUI verification is left as an explicit NEEDS_USER_DECISION (also
+      called a user checkpoint) rather than claimed.
+
+## 4. Standing rules before the commit
+
+- [ ] Every REAL issue encountered (bug, misdiagnosis, silent failure) has its
+      durable record: MEMORY.md entry (knowledge), HANDOFF.md entry
+      (narrative + evidence), and `docs/incidents/<date>-<topic>.md`
+      (self-contained issue+fix). Raw rigs live in gitignored dirs.
+- [ ] HANDOFF.md snapshot entry and TASKS.md status row updated (TASKS owns
+      live status; HANDOFF owns narrative and evidence); any
+      plan/spec contradiction resolved WITHOUT editing those files silently —
+      the resolution goes to HANDOFF.md §5.
+- [ ] AGENTS.md §1/§2 map updated if a new durable document or package was
+      created; a document outside the map does not exist for the next agent.
+- [ ] Final diff reviewed: no unrelated changes, no secrets, no large
+      binaries (gitignore rules in AGENTS.md §5 hold).
+
+## 5. Commit + push
+
+- Conventional subject per the touched area (`feat(<scope>): …`, `fix: …`,
+  `docs(kit): …`, `refactor(kit): …`); one commit per green task.
+- Push to `origin master`; no force-push, no history rewrite, no remote
+  changes.
+- Git CRLF warnings are benign; fix nothing because of them.
+
+## 6. Honest labels
+
+Every claim in your final report carries its validation method and its exact
+evidence (command output, file counts, mtimes). PASS / FAIL / SKIPPED /
+BLOCKED / NEEDS_USER_DECISION — optimistic claims are the failure mode this
+checklist exists to prevent (CLAUDE.md §10, §16).
+
+## 7. Added 2026-10-12 (after a live UI regression and three documentation drifts)
+
+- [ ] **UI/geometry changes**: the shape was copied from a shipped occupant, not
+      invented — and the visual result is reported as a USER CHECKPOINT, never as
+      verified. With no DOM test environment, write "structurally verified;
+      visual check pending" in the same sentence as the fix.
+- [ ] **Structural invariants a regression would break are asserted** (portal
+      target, `position:fixed` + z-index, height cap, observers, dismissal
+      paths) — not pixels.
+- [ ] **No platform fact is asserted in a test comment or a doc without a
+      file/line source** (platform module table, slot names, service keys). "The
+      shell only guarantees X" is a claim about the checkout, not about your
+      imports.
+- [ ] **After a behavior change, grep the tree for the old number and the old
+      wording** (test counts, "inline panel", externals lists) — in the same
+      commit, including comments inside the file you changed.
+- [ ] **A diagnostic that contradicts itself gets a probe before a theory.** A
+      404 on a bundle route, or a capability flag reading false, is not evidence
+      until the live shape is printed.
+- [ ] **Known gaps found during the work go into the README's limitations at that
+      moment** (e.g. routes answering without the GUI session cookie), not only
+      into session notes.
+- [ ] **Evidence class named per claim**: code read / unit test / typecheck /
+      composition check / live probe / user checkpoint.
+- [ ] **First push to a NEW repo**: confirm the branch
+      (`git rev-parse --abbrev-ref HEAD`). `src refspec <x> does not match any`
+      means the ref name is wrong, not the remote.
+
+## 8. Added 2026-10-12 (host-side traps proved on `dsh-vision-bridge`)
+
+- [ ] **No plugin code assumes `ctx.fs` can write bytes or delete.** The service
+      is `writeText`/`editText` only — no `writeBytes`, `mkdir`, `remove`. Bytes
+      go through the attachment store; a delete route, if shipped at all, is an
+      honest refusal (see `dsh-vision-bridge` D-3), not a pretended success.
+- [ ] **Every JSON state file written read-modify-write passes a write intent:**
+      `createIfAbsent` when absent, `replaceIfVersion` with the version from a
+      preceding `stat` when present. Omitting the intent **overwrites
+      unconditionally**. The test fake **enforces** the intent (a fake that
+      ignores it hides the bug); `FsInfo` has no mtime to fall back on.
+- [ ] **Host routes:** registered through `ctx.webServer.register` inside
+      `ctx.effect` with all route disposers returned; a same-origin check on
+      every write route; responses are `cache-control: no-store`; a
+      duplicate `(kind, path)` is expected to throw.
+- [ ] **A route handler carries no Agent.** Any per-project route takes a
+      `sessionId` explicitly and resolves the project dir from
+      `agents.get(id)` → `session.header.cwd`, with a documented fallback.
+- [ ] **An optional service is read with `ctx.get(name)`** (plus an undefined
+      check) or consumed through `ctx.inject([...], cb)`. A bare
+      `ctx.<service>` property read **throws** `cannot get property "…" without
+      inject` when the service is not in the plugin's `inject`, and a `try/catch`
+      that returns `undefined` converts that host rule violation into a silent
+      capability absence — I-4: the panel registered no routes and answered 404
+      for the life of the apply while `Config`, the tools, and the slot occupant
+      all looked green. A headless composition still reports absence, because the
+      `inject` callback simply never fires.
+- [ ] **`defineTool` assertions target the compiled schema**
+      (`parameters.properties.<name>.type`, `parameters.required`), not the DSL
+      shape; `isConcurrencySafe` is called with valid args when asserting the
+      classifier's answer.
+- [ ] **Test fakes are faithful to the real gating:** a fake `ctx.inject` fires
+      only for dependency lists it can satisfy; a fake `subagents` implements
+      `resolveMaxDepth`.
+- [ ] **A client half's contract is asserted from source** (`tests/client.spec.ts`
+      model): the literal registration call, the externals list, the route
+      path strings, `cache: 'no-store'`, the portal call, the aria/dialog
+      wiring, and the package `exports` / `files` / `dsh` shape.
+- [ ] **Routes are outside the GUI session gate.** A write route without a
+      same-origin check is an open local-only gap: mitigate it AND write it into
+      the plugin's limitations; never report it as solved.
+- [ ] **The composition check names the target checkout and tolerates
+      pre-existing profile-patch noise** — PASS is exit 0 plus the plugin's row
+      being composed, nothing more.

@@ -32,23 +32,33 @@ Two rules of use:
 
 | Path | What it is | Source project |
 |---|---|---|
-| [`guides/shortest-path-to-a-plugin.md`](guides/shortest-path-to-a-plugin.md) | The funnel: shape → shortest order → worst traps. **Read first.** | `deepseek_plugins` |
+| [`guides/shortest-path-to-a-plugin.md`](guides/shortest-path-to-a-plugin.md) | The funnel: shape → shortest order → worst traps. **Read first.** | archived plugin suite |
+| [`guides/creating-a-source-plugin.md`](guides/creating-a-source-plugin.md) | Deep guide — the host half: services, `ctx.fs`, `ctx.webServer`, `defineTool`, route security | archived plugin suite |
+| [`guides/creating-a-client-card-plugin.md`](guides/creating-a-client-card-plugin.md) | Deep guide — the client card and the hand-written bundle contract. **Carries a 0.1.6 banner: §2/§7/§8 describe removed seams** | archived plugin suite |
+| [`guides/plugin-checklist.md`](guides/plugin-checklist.md) | Pre-flight gates before claiming a plugin is done | archived plugin suite |
+| [`guides/plugin-template-protocol.md`](guides/plugin-template-protocol.md) | Copy-and-rename protocol + the contract list for a new host-side plugin | archived plugin suite |
+| [`guides/toolchain-and-test-traps.md`](guides/toolchain-and-test-traps.md) | Launcher flag order, `--dump-config` composition proof, the boot-adopt store-write race | archived plugin suite |
+| [`guides/dsh-upgrade-to-0.2.1.md`](guides/dsh-upgrade-to-0.2.1.md) | Moving a checkout **and** a plugin suite across the 0.2.x break | workspace note |
 | [`INCIDENT-INDEX.md`](INCIDENT-INDEX.md) | One-page catalog of the 18 core records: issue, root cause, fix, status + a verification matrix and live-application semantics | `dsh-autocompact` |
 | [`RETRO.md`](RETRO.md) | Nine **process** failures and the rule each produced (not technical bugs — the meta-lessons) | `dsh-autocompact` |
 | [`incidents/`](incidents/) | The 18 core records the catalog tables, verbatim | `dsh-autocompact` |
 | [`incidents/workspace-suite/`](incidents/workspace-suite/) | 6 further records from the earlier plugin suite (junction farm, inject cache, target drift, the settings-seam retirement) | `deepseek_plugins` |
 | [`projects/`](projects/) | Per-**project** entry cards: what a plugin is, its shape, its trap list, and a pointer to its own authoritative docs. The project keeps its own notes; this folder only points. | multiple |
 
-Companion deep guides are **not** copied here (they carry project-specific wiring); they stay with
-the workspace and are pointed to:
+The deep guides **are copied here** as of 2026-10-13. They used to live in the plugin suite's
+workspace and were merely pointed at; that repository is now archived, and a guide that does not
+travel with this repository cannot be read from another machine. The originals stay authoritative
+and the copies carry a provenance header.
 
 | Need | Read |
 |---|---|
-| Host-side (engine, hook, watcher, command) | `D:\my_deepseek_harness\deepseek_plugins\docs\best-practices\creating-a-source-plugin.md` (§3a = `ctx.fs`, §3b = `ctx.webServer`, §3c = `defineTool`, §7 = route security) |
-| Client card / Web-UI surface | `D:\my_deepseek_harness\deepseek_plugins\docs\best-practices\creating-a-client-card-plugin.md` (§7 = the 0.2.x seam, §8 = the hand-written bundle + contract assertions) |
-| Pre-flight checklist | `D:\my_deepseek_harness\deepseek_plugins\docs\best-practices\plugin-checklist.md` |
+| Host-side (engine, hook, watcher, command) | `guides/creating-a-source-plugin.md` (§3a = `ctx.fs`, §3b = `ctx.webServer`, §3c = `defineTool`, §7 = route security) |
+| Client card / Web-UI surface | `guides/creating-a-client-card-plugin.md` (§7 = the 0.2.x seam, §8 = the hand-written bundle + contract assertions) — **read its 0.1.6 banner first** |
+| Pre-flight checklist | `guides/plugin-checklist.md` |
+| New-plugin copy/rename protocol | `guides/plugin-template-protocol.md` |
+| Launcher / composition / store-write traps | `guides/toolchain-and-test-traps.md` |
+| Upgrading a checkout and a suite to 0.2.1 | `guides/dsh-upgrade-to-0.2.1.md` |
 | The fully worked guide + 14-entry trap list | `D:\my_deepseek_harness\dsh-autocompact\docs\PLUGIN-GUIDE.md` |
-| Updating a checkout to a new release + plugin compat | `D:\my_deepseek_harness\note_issue_fix\2026-10-12-update-to-0.2.1-and-plugin-compat.md` |
 
 ## Projects (per-project entry cards)
 
@@ -83,7 +93,7 @@ stay in the project's own repo — the card points, it does not duplicate.
 | A plugin "does not work" and you are not sure it is even loaded | [`auto-compact-not-working`](incidents/workspace-suite/2026-09-12-auto-compact-not-working.md) — prove what is actually loaded before theorizing |
 | Your tests are green and the UI is still broken for the user | [`RETRO.md`](RETRO.md) rule 1 — structural proof is not layout proof; state the check the user must run |
 | Two of your own records/README contradict the code | [`RETRO.md`](RETRO.md) rule 9 — run a consolidation pass; writing the index is what exposes contradictions |
-| A GUI must write, upload, or delete **image bytes** into a project folder | [`projects/dsh-vision-bridge.md`](projects/dsh-vision-bridge.md) traps 1-2, then `deepseek_plugins/docs/best-practices/creating-a-source-plugin.md` §3a — `ctx.fs` has no binary write and no delete |
+| A GUI must write, upload, or delete **image bytes** into a project folder | [`projects/dsh-vision-bridge.md`](projects/dsh-vision-bridge.md) traps 1-2, then `guides/creating-a-source-plugin.md` §3a — `ctx.fs` has no binary write and no delete |
 | Two writers silently drop one entry from a JSON state file | same card, trap 2 / source-plugin guide §3a — `FsWriteIntent` semantics; omitting the intent overwrites |
 | `webserver: duplicate exact route "…"` on mount; or a route handler needs JSON output | same card, trap 3 / source-plugin guide §3b — `ctx.webServer.register`, no JSON helper, register inside `ctx.effect` |
 | A per-project panel behaves per-process | same card, trap 4 / source-plugin + client-card guides — a route handler has no Agent; pass `sessionId` |
@@ -102,10 +112,16 @@ stay in the project's own repo — the card points, it does not duplicate.
 | `dsh-autocompact/docs/{INCIDENT-INDEX.md, RETRO.md, incidents/*.md}` | commit `e8cf2e0` (`main`, worktree clean) | 2026-10-12 |
 | `deepseek_plugins/docs/incidents/*.md` | commit `4498abd` (`master`) | 2026-10-12 |
 | `deepseek_plugins/docs/best-practices/shortest-path-to-a-plugin.md` | commit `4498abd` (`master`) | 2026-10-12 |
+| `deepseek_plugins/docs/best-practices/{creating-a-source-plugin,creating-a-client-card-plugin,plugin-checklist}.md` | commit `4498abd` (`master`) | 2026-10-13 |
+| `deepseek_plugins/_template-plugin/README.md` → `guides/plugin-template-protocol.md` | commit `4498abd` (`master`) | 2026-10-13 |
+| `deepseek_plugins/MEMORY.md` §1/§3 lessons → `guides/toolchain-and-test-traps.md` | commit `4498abd` (`master`) | 2026-10-13 |
+| `note_issue_fix/2026-10-12-update-to-0.2.1-and-plugin-compat.md` → `guides/dsh-upgrade-to-0.2.1.md` | workspace file (never in a repo) | 2026-10-13 |
 | `projects/dsh-vision-bridge.md` — a new entry card, not a copy | `D:\my_deepseek_harness\dsh-vision-bridge` (dirty tree at hand-over) | 2026-10-12 |
 
 Copies are verbatim except for a one-line **"Universal copy"** provenance header at the top of the
-index, the retro and the guide. The source repos remain authoritative: each project keeps its own
+index, the retro and the guide. The `deepseek_plugins` repository named in this table was frozen
+at `_archive/deepseek_plugins/` in the workspace on 2026-10-13; the paths quoted above are
+historical, and everything still worth reading was copied into this folder first. The source repos remain authoritative: each project keeps its own
 copy of its notes/guide and **points here** for the shared set — this folder is a copy, not a
 replacement for a project's own record keeping.
 
