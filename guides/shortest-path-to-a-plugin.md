@@ -36,7 +36,11 @@ the harness would have rendered for free.
 5. `tsc -p tsconfig.json --noEmit`.
 6. Patch row: package name when there is a client half; disable any base plugin you replace.
 7. `--dump-config` — wiring, without booting.
-8. Live install: profile junction + row; never copy files through the junction.
+8. Live install: a profile **junction + bare-name row** — never `install_bundle` with a
+   `file:` spec for development (it installs an injected snapshot copy; trap 9), and never
+   copy files through the junction. On a `patchReload: live` profile this applies entirely on
+   save (module, tools, and the client bundle in an open page); a source change to an
+   already-applied module needs a re-apply (GUI disable → enable) or a restart.
 9. Client half (optional): `dsh.client` block, `./client` export, one fail-safe slot registration.
 10. Structural tests → **user visual checkpoint** → commit → push.
 
@@ -64,6 +68,14 @@ the harness would have rendered for free.
    surfaces; record them as limitations.
 8. **A plugin with no DOM test environment cannot see layout** — structural
    assertions plus a user visual checkpoint, stated as such.
+9. **`install_bundle` with a `file:` spec does not link — it injects a snapshot.**
+   pnpm installs a `file:` dependency by **injection** (`.modules.yaml` →
+   `injectedDeps`, `nodeLinker: hoisted`), so the profile gets a hard-linked **copy**
+   (a real directory, `LinkType` empty — not a junction); a later source edit never
+   reaches the harness and a re-install answers `Already up to date` — a
+   successful-looking install can freeze your code. Develop through a **profile
+   junction + bare-name row** (step 8); reserve `install_bundle` for a frozen release.
+   Record: `incidents/2026-10-13-install-injection-snapshot.md`.
 
 ## 4. Target drift — §1 of the client-card guide is the 0.1.x seam
 

@@ -7,8 +7,15 @@ and the plugin's docs disagree, the plugin's docs win (report the drift).
 
 - **Repo:** `D:\my_deepseek_harness\dsh-vision-bridge\`
 - **Target:** DSH `0.2.1-alpha.2` (`D:\deepseek-harness_2`)
-- **Status at hand-over:** dirty tree, not committed — the human's Lead reviews
-  and commits.
+- **Status at hand-over:** committed and green — `3753bbd`
+  (`fix(gui): make the master switch hold at the upload route and in the panel`) and
+  `8885d3b` (docs: the guide, the incident index and the two records), then `71c4477`
+  (`docs(install): a junction + row is the live path; install_bundle injects a snapshot`).
+- **Install: DONE** (2026-10-13) — a **junction + bare-name patch row**, live-verified on the
+  `patchReload: live` `web` profile with **no restart and no page refresh**: Config
+  `status:"schema"`, both tools in the Host tool list, the panel occupant at
+  `conversation.composer.dock` order 55, and the GUI toggle `schema`→`inactive`→`schema`.
+  Not `install_bundle` — a `file:` spec there installs an injected snapshot copy (I-3, trap 12).
 
 ## What it is
 
@@ -75,6 +82,7 @@ sub-agent mount), `index.ts` (entry), `client.js` (hand-written bundle).
 | D-3 | An upload is committed to `ctx.attachments.saveImage()` with a JSON index of **references**, not written into a zone folder — `ctx.fs` has no binary write. "Delete" is an honest permanent 501. | `docs/DEVIATIONS.md` D-3 |
 | D-4 | The host route contract is `/inbox` + `/upload` + `/remove`, not the spec's first-draft `/status` + `/list` + `/upload`. | `docs/DEVIATIONS.md` D-4 |
 | D-5 | The `enabled` switch also gates the upload route with **403** (before the body is decoded or anything is committed), and the panel renders a "The bridge is disabled." state with its controls disabled — the switch is a host check *and* a rendered state, not one or the other. | `docs/DEVIATIONS.md` D-5 |
+| D-6 | Installed as a junction + bare-name patch row, **not** with `install_bundle`; neither half needed a restart — the plan's A1.3 "one restart" was an assumption about the delivery table, not a requirement of the mechanism. `install_bundle` with a `file:` spec installs a pnpm-**injected hard-linked snapshot copy**, so a later source edit would never have reached the harness. | `docs/DEVIATIONS.md` D-6 |
 
 ## Trap list (short; full records in the guides)
 
@@ -130,6 +138,16 @@ its source, in the best-practices guides (scope: `deepseek_plugins/docs/`):
     before any work, and the panel renders "The bridge is disabled." and disables
     its controls. → *client-card guide §4* +
     [2026-10-13-enabled-switch-gap](../incidents/2026-10-13-enabled-switch-gap.md).
+12. **`install_bundle` with a `file:` spec installs a hard-linked snapshot copy, not a
+    link.** pnpm *injects* a `file:` dependency (`.modules.yaml` → `injectedDeps`), so
+    the harness resolves the copy, a later source edit never reaches it, and a re-install
+    answers `Already up to date` — a successful-looking install can freeze your code.
+    Install a **junction + bare-name patch row** to develop; reserve `install_bundle` for
+    a frozen release. On a `patchReload: live` profile the junction + row applies entirely
+    on save (module, tools, and the client bundle in an open page); a source change to an
+    **already-applied** module needs a re-apply (GUI disable → enable) or a restart. →
+    *both funnel guides + client-card guide §5 (item 5)* +
+    [2026-10-13-install-injection-snapshot](../incidents/2026-10-13-install-injection-snapshot.md).
 
 ## Authoritative docs (read these, not a summary of them)
 
@@ -137,12 +155,13 @@ its source, in the best-practices guides (scope: `deepseek_plugins/docs/`):
 |---|---|
 | `dsh-vision-bridge/docs/SPEC.md` | design, the four gates, acceptance evidence classes |
 | `dsh-vision-bridge/docs/PLAN.md` | the implementation plan |
-| `dsh-vision-bridge/docs/DEVIATIONS.md` | D-1..D-4 and why the built system differs |
+| `dsh-vision-bridge/docs/DEVIATIONS.md` | D-1..D-6 and why the built system differs |
 | `dsh-vision-bridge/docs/VISION-AGENT.md` | the sub-agent, the path-as-medium trick, injection containment |
 | `dsh-vision-bridge/docs/GUI.md` | slots, the portal placement, the frozen route contract, browser checkpoint steps |
 
-Evidence trail: `tests/` (11 files, the suite the plugin reports as 280 tests
-green at the time of writing), `--dump-config` exit 0, `tsc --noEmit` exit 0.
+Evidence trail: `tests/` (11 files, the suite the plugin reports as **283 tests**
+green at the time of writing), `--dump-config` exit 0 with the row, `tsc --noEmit` exit 0,
+and the live install checks recorded in I-3.
 
 ## Shared-experience pointers
 
